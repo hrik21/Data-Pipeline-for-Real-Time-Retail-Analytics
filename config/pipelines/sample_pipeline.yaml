@@ -1,0 +1,159 @@
+# Sample pipeline configuration for the Airflow orchestration framework
+name: sample_data_pipeline
+description: Sample real-time data pipeline with ingestion, transformation, and validation
+schedule_interval: "0 */2 * * *"  # Every 2 hours
+start_date: "2024-01-01T00:00:00"
+catchup: false
+max_active_runs: 1
+
+default_args:
+  owner: data-engineering
+  depends_on_past: false
+  email_on_failure: true
+  email_on_retry: false
+  retries: 3
+  retry_delay_minutes: 5
+
+# Data sources configuration
+sources:
+  - source_id: customer_db
+    source_type: database
+    connection_params:
+      host: localhost
+      port: 5432
+      database: customers
+      schema: public
+      table: customers
+    change_detection:
+      method: timestamp
+      watermark_column: updated_at
+      check_interval: 300  # 5 minutes
+    validation_rules:
+      required_columns: [id, email, created_at, updated_at]
+      null_checks: [id, email]
+    retries: 3
+    retry_delay_minutes: 5
+    
+  - source_id: orders_api
+    source_type: api
+    connection_params:
+      url: https://api.example.com/orders
+      method: GET
+      headers:
+        Authorization: Bearer ${API_TOKEN}
+      timeout: 30
+    change_detection:
+      method: api_polling
+      change_detection_field: last_modified
+      check_interval: 600  # 10 minutes
+    validation_rules:
+      required_fields: [order_id, customer_id, order_date, total_amount]
+    retries: 2
+    retry_delay_minutes: 10
+
+# Data transformations configuration
+transformations:
+  - model_name: staging_customers
+    model_type: staging
+    dependencies: [customer_db]
+    materialization: table
+    tests:
+      - unique: [id]
+      - not_null: [id, email]
+    retries: 2
+    retry_delay_minutes: 10
+    
+  - model_name: staging_orders
+    model_type: staging
+    dependencies: [orders_api]
+    materialization: table
+    tests:
+      - unique: [order_id]
+      - not_null: [order_id, customer_id]
+      - relationships:
+          to: ref('staging_customers')
+          field: customer_id
+    retries: 2
+    retry_delay_minutes: 10
+    
+  - model_name: dim_customers
+    model_type: mart
+    dependencies: [staging_customers]
+    materialization: table
+    tests:
+      - unique: [customer_key]
+      - not_null: [customer_key, email]
+    retries: 1
+    retry_delay_minutes: 15
+    
+  - model_name: fact_orders
+    model_type: mart
+    dependencies: [staging_orders, dim_customers]
+    materialization: incremental
+    incremental_strategy: merge
+    unique_key: order_id
+    tests:
+      - unique: [order_id]
+      - not_null: [order_id, customer_key]
+    retries: 1
+    retry_delay_minutes: 15
+
+# Target validation configuration
+targets:
+  - table_name: dim_customers
+    validation_rules:
+      min_row_count: 1000
+      max_age_hours: 4
+      custom_checks:
+        - name: email_format_check
+          query: "SELECT COUNT(*) FROM dim_customers WHERE email NOT LIKE '%@%'"
+          expected_result: 0
+        - name: duplicate_email_check
+          query: "SELECT email, COUNT(*) as cnt FROM dim_customers GROUP BY email HAVING COUNT(*) > 1"
+          expected_row_count: 0
+    fail_on_validation_error: true
+    
+  - table_name: fact_orders
+    validation_rules:
+      min_row_count: 5000
+      max_age_hours: 2
+      custom_checks:
+        - name: negative_amount_check
+          query: "SELECT COUNT(*) FROM fact_orders WHERE total_amount < 0"
+          expected_result: 0
+        - name: future_order_date_check
+          query: "SELECT COUNT(*) FROM fact_orders WHERE order_date > CURRENT_DATE"
+          expected_result: 0
+    fail_on_validation_error: false  # Warning only
+
+# Task dependencies
+dependencies:
+  # Transformations depend on ingestion
+  transform_staging_customers: [ingest_customer_db]
+  transform_staging_orders: [ingest_orders_api]
+  
+  # Marts depend on staging
+  transform_dim_customers: [transform_staging_customers]
+  transform_fact_orders: [transform_staging_orders, transform_dim_customers]
+  
+  # Validation depends on transformations
+  validate_dim_customers: [transform_dim_customers]
+  validate_fact_orders: [transform_fact_orders]
+
+# Monitoring and alerting
+monitoring:
+  enable_metrics: true
+  alert_channels:
+    - email: data-team@company.com
+    - slack: "#data-alerts"
+  
+  alert_rules:
+    - name: pipeline_failure
+      condition: task_failed
+      severity: critical
+    - name: data_quality_warning
+      condition: validation_warning
+      severity: warning
+    - name: long_running_task
+      condition: task_duration > 3600  # 1 hour
+      severity: warning

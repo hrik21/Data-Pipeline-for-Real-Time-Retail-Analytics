@@ -22,7 +22,7 @@
   - Write unit tests for change detection logic
   - _Requirements: 1.1, 1.2, 1.5_
 
-- [ ] 4. Develop data extraction and validation components
+- [x] 4. Develop data extraction and validation components
   - Implement DataExtractor class for pulling data from various sources
   - Create IngestionValidator for schema and data quality validation
   - Implement data serialization and deserialization utilities
@@ -30,7 +30,7 @@
   - Write unit tests for extraction and validation logic
   - _Requirements: 1.1, 1.3, 1.4, 1.6_
 
-- [ ] 5. Build Airflow orchestration framework
+- [x] 5. Build Airflow orchestration framework
   - Create DynamicDAGGenerator for generating DAGs based on configuration
   - Implement custom Airflow operators for data pipeline tasks
   - Create Airflow sensors for change-based triggering

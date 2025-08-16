@@ -484,3 +484,34 @@ class APIDataSource(DataSource, PipelineComponent):
     def health_check(self) -> bool:
         """Check API source health."""
         return self.test_connection()
+
+
+class DataSourceFactory:
+    """Factory class for creating data source instances."""
+    
+    _source_types = {
+        'database': DatabaseDataSource,
+        'api': APIDataSource,
+    }
+    
+    @classmethod
+    def create_source(cls, source_type: str, source_id: str, config: Dict[str, Any]) -> DataSource:
+        """Create a data source instance based on type."""
+        if source_type not in cls._source_types:
+            raise ValueError(f"Unsupported source type: {source_type}")
+        
+        source_class = cls._source_types[source_type]
+        return source_class(source_id, config)
+    
+    @classmethod
+    def register_source_type(cls, source_type: str, source_class: type) -> None:
+        """Register a new data source type."""
+        if not issubclass(source_class, DataSource):
+            raise ValueError("Source class must inherit from DataSource")
+        
+        cls._source_types[source_type] = source_class
+    
+    @classmethod
+    def get_supported_types(cls) -> List[str]:
+        """Get list of supported source types."""
+        return list(cls._source_types.keys())
