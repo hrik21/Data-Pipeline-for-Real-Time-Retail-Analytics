@@ -1,0 +1,10 @@
+# Airflow-specific requirements
+apache-airflow-providers-snowflake==5.1.1
+apache-airflow-providers-postgres==5.7.1
+apache-airflow-providers-docker==3.7.2
+apache-airflow-providers-http==4.6.0
+snowflake-connector-python==3.6.0
+psycopg2-binary==2.9.9
+pandas==2.1.4
+sqlalchemy==1.4.48
+pydantic==2.5.2

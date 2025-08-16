@@ -1,0 +1,50 @@
+# Development overrides for docker-compose.yml
+version: '3.8'
+
+services:
+  airflow-webserver:
+    environment:
+      AIRFLOW__WEBSERVER__RELOAD_ON_PLUGIN_CHANGE: 'true'
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/airflow/dags
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:rw
+      - ./src:/opt/airflow/src:ro
+    command: >
+      bash -c "
+        airflow db init &&
+        airflow users create --username admin --firstname Admin --lastname User --role Admin --email admin@example.com --password admin || true &&
+        airflow webserver
+      "
+
+  airflow-scheduler:
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:rw
+      - ./src:/opt/airflow/src:ro
+
+  airflow-worker:
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags:rw
+      - ./src:/opt/airflow/src:ro
+
+  dbt:
+    command: ["debug"]
+    volumes:
+      - ./dbt:/usr/app/dbt:rw
+
+  ingestion-service:
+    volumes:
+      - ./src:/usr/app/src:rw
+    environment:
+      LOG_LEVEL: DEBUG
+
+  processing-service:
+    volumes:
+      - ./src:/usr/app/src:rw
+    environment:
+      LOG_LEVEL: DEBUG
+
+  monitoring-service:
+    volumes:
+      - ./src:/usr/app/src:rw
+    environment:
+      LOG_LEVEL: DEBUG

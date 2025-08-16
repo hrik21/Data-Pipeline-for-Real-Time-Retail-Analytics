@@ -1,0 +1,28 @@
+# Development environment configuration
+debug: true
+
+logging:
+  level: "DEBUG"
+  file_path: "./logs/pipeline-dev.log"
+
+snowflake:
+  account: "your-dev-account"
+  username: "dev_user"
+  password: "dev_password"
+  warehouse: "DEV_WH"
+  database: "DEV_DB"
+  schema: "RAW"
+
+airflow:
+  base_url: "http://localhost:8080"
+  username: "admin"
+  password: "admin"
+
+databases:
+  postgres_source:
+    host: "localhost"
+    port: 5432
+    database: "source_db"
+    username: "postgres"
+    password: "postgres"
+    schema: "public"

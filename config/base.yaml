@@ -1,0 +1,20 @@
+# Base configuration for the data pipeline
+debug: false
+
+logging:
+  level: "INFO"
+  format: "json"
+  max_file_size: "10MB"
+  backup_count: 5
+
+airflow:
+  dags_folder: "./airflow/dags"
+  base_url: "http://localhost:8080"
+
+# Default database configurations (override in environment-specific files)
+databases: {}
+
+# Snowflake configuration (override in environment-specific files)
+snowflake:
+  warehouse: "COMPUTE_WH"
+  role: "SYSADMIN"

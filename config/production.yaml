@@ -1,0 +1,22 @@
+# Production environment configuration
+debug: false
+
+logging:
+  level: "INFO"
+  file_path: "./logs/pipeline-prod.log"
+
+snowflake:
+  account: "${SNOWFLAKE_ACCOUNT}"
+  username: "${SNOWFLAKE_USERNAME}"
+  password: "${SNOWFLAKE_PASSWORD}"
+  warehouse: "PROD_WH"
+  database: "PROD_DB"
+  schema: "RAW"
+
+airflow:
+  base_url: "${AIRFLOW_BASE_URL}"
+  username: "${AIRFLOW_USERNAME}"
+  password: "${AIRFLOW_PASSWORD}"
+
+# Production databases should be configured via environment variables
+databases: {}
