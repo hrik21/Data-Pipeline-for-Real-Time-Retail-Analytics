@@ -2,6 +2,81 @@
 
 A comprehensive real-time, end-to-end data pipeline that enables scalable data ingestion, transformation, and orchestration for analytics use cases.
 
+## Architecture
+
+### High-Level Architecture
+
+```mermaid
+graph TB
+    subgraph "Data Sources"
+        DS1[Database 1]
+        DS2[API Endpoints]
+        DS3[File Systems]
+        DS4[Streaming Sources]
+    end
+    
+    subgraph "Ingestion Layer"
+        CDC[Change Data Capture]
+        SENSORS[Airflow Sensors]
+        EXTRACTORS[Data Extractors]
+    end
+    
+    subgraph "Orchestration Layer"
+        AIRFLOW[Apache Airflow]
+        DAGS[Dynamic DAGs]
+    end
+    
+    subgraph "Processing Layer"
+        DBT[dbt Core]
+        PYTHON[Python Processors]
+        VALIDATION[Data Validation]
+    end
+    
+    subgraph "Storage Layer"
+        SNOWFLAKE[(Snowflake)]
+        STAGING[Staging Tables]
+        MARTS[Data Marts]
+    end
+    
+    subgraph "Infrastructure"
+        DOCKER[Docker Containers]
+        CICD[CI/CD Pipeline]
+        MONITORING[Monitoring & Alerts]
+    end
+    
+    DS1 --> CDC
+    DS2 --> CDC
+    DS3 --> CDC
+    DS4 --> CDC
+    
+    CDC --> SENSORS
+    SENSORS --> AIRFLOW
+    AIRFLOW --> DAGS
+    DAGS --> EXTRACTORS
+    EXTRACTORS --> DBT
+    DBT --> PYTHON
+    PYTHON --> VALIDATION
+    VALIDATION --> SNOWFLAKE
+    
+    SNOWFLAKE --> STAGING
+    STAGING --> MARTS
+    
+    DOCKER --> AIRFLOW
+    DOCKER --> DBT
+    DOCKER --> PYTHON
+    CICD --> DOCKER
+    MONITORING --> AIRFLOW
+```
+
+The pipeline is built using a microservices architecture with the following key components:
+
+1. **Airflow Orchestrator**: Central orchestration engine running in Docker containers
+2. **dbt Transformer**: Data transformation engine with version-controlled models
+3. **Python Processors**: Custom data processing and validation logic
+4. **Snowflake Warehouse**: Cloud data warehouse for storage and analytics
+5. **Change Detection System**: CDC mechanisms for efficient data processing
+6. **Monitoring Stack**: Comprehensive observability and alerting
+
 ## Project Structure
 
 ```
